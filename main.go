@@ -11,12 +11,11 @@ import (
 	"log"
 	"unsafe"
 
-	proto "github.com/golang/protobuf/proto"
 	pb "github.com/motxx/zinctx-go/protos"
+	"google.golang.org/protobuf/proto"
 )
 
-func main() {
-
+func makeSampleQueryRequest() *pb.QueryRequest {
 	args := map[string]*pb.Value{
 		"hoge": &pb.Value{
 			ValueOneOf: &pb.Value_Intval{123},
@@ -25,18 +24,35 @@ func main() {
 			ValueOneOf: &pb.Value_Stringval{"bar"},
 		},
 	}
-	sq := &pb.SendQuery{
+	return &pb.QueryRequest{
 		Address:   "1234567890abcdef",
 		Arguments: args,
 	}
+}
 
-	raw, err := proto.Marshal(sq)
+func SendQueryRequest(req *pb.QueryRequest) *pb.QueryResponse {
+	raw, err := proto.Marshal(req)
 	if err != nil {
-		log.Fatalln("Failed to encode send_query:", err)
+		log.Fatalln("Failed to encode req:", err)
 	}
 
-	ptr := C.CString(string(raw))
-	defer C.free(unsafe.Pointer(ptr))
+	req_cstr := C.CString(string(raw))
+	defer C.free(unsafe.Pointer(req_cstr))
 
-	C.ffi_send_query(ptr)
+	res_cstr := C.ffi_send_query_request(req_cstr)
+	defer C.free(unsafe.Pointer(res_cstr))
+
+	res := &pb.QueryResponse{}
+	err = proto.Unmarshal([]byte(C.GoString(res_cstr)), res)
+	if err != nil {
+		log.Fatalln("Failed to encode res:", err)
+	}
+
+	return res
+}
+
+func main() {
+	proto := makeSampleQueryRequest()
+	response := SendQueryRequest(proto)
+	println(response.Output.GetStringval())
 }
