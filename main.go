@@ -8,25 +8,30 @@ package main
 import "C"
 
 import (
+	"fmt"
 	"log"
 	"unsafe"
 
 	pb "github.com/motxx/zinctx-go/protos"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 func makeSampleQueryRequest() *pb.QueryRequest {
-	args := map[string]*pb.Value{
-		"hoge": &pb.Value{
-			ValueOneOf: &pb.Value_Intval{123},
-		},
-		"fuga": &pb.Value{
-			ValueOneOf: &pb.Value_Stringval{"bar"},
-		},
+	args, err := anypb.New(&pb.GetFeeArguments{})
+	if err != nil {
+		log.Fatalln("Cannot marshal arguments to any")
 	}
 	return &pb.QueryRequest{
-		Address:   "1234567890abcdef",
-		Arguments: args,
+		Address: "contract-address", //&pb.Address{Data: []byte("contract-address")},
+		Method:  "get_fee",
+		Input: &pb.Input{
+			Msg: &pb.Msg{
+				Sender:    "sender-address",    //&pb.Address{Data: []byte("sender")},
+				Recipient: "recipient-address", //&pb.Address{Data: []byte("recipient")},
+			},
+			Arguments: args,
+		},
 	}
 }
 
@@ -54,5 +59,9 @@ func SendQueryRequest(req *pb.QueryRequest) *pb.QueryResponse {
 func main() {
 	proto := makeSampleQueryRequest()
 	response := SendQueryRequest(proto)
-	println(response.Output.GetStringval())
+	out := &pb.GetFeeOutput{}
+	if err := response.Output.UnmarshalTo(out); err != nil {
+		log.Fatalln("Cannot unmarshal output")
+	}
+	fmt.Println("Fee:", out.Fee)
 }
