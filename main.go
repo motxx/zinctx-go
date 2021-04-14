@@ -17,6 +17,11 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
+const (
+	localhostUrl = "http://localhost:4001"
+	rinkebyUrl   = "https://rinkeby3-zandbox.zksync.dev"
+)
+
 func makeSampleQueryRequest() *pb.QueryRequest {
 	args, err := anypb.New(&pb.GetFeeArguments{})
 	if err != nil {
@@ -35,7 +40,10 @@ func makeSampleQueryRequest() *pb.QueryRequest {
 	}
 }
 
-func SendQueryRequest(req *pb.QueryRequest) *pb.QueryResponse {
+func SendQueryRequest(endpoint string, req *pb.QueryRequest) *pb.QueryResponse {
+	endpoint_cstr := C.CString(endpoint)
+	defer C.free(unsafe.Pointer(endpoint_cstr))
+
 	raw, err := proto.Marshal(req)
 	if err != nil {
 		log.Fatalln("Failed to encode req:", err)
@@ -44,7 +52,7 @@ func SendQueryRequest(req *pb.QueryRequest) *pb.QueryResponse {
 	req_cstr := C.CString(string(raw))
 	defer C.free(unsafe.Pointer(req_cstr))
 
-	res_cstr := C.ffi_send_query_request(req_cstr)
+	res_cstr := C.ffi_send_query_request(endpoint_cstr, req_cstr)
 	defer C.free(unsafe.Pointer(res_cstr))
 
 	res := &pb.QueryResponse{}
@@ -57,8 +65,8 @@ func SendQueryRequest(req *pb.QueryRequest) *pb.QueryResponse {
 }
 
 func main() {
-	proto := makeSampleQueryRequest()
-	response := SendQueryRequest(proto)
+	req := makeSampleQueryRequest()
+	response := SendQueryRequest(rinkebyUrl, req)
 	out := &pb.GetFeeOutput{}
 	if err := response.Output.UnmarshalTo(out); err != nil {
 		log.Fatalln("Cannot unmarshal output")
