@@ -23,7 +23,7 @@ func makeSampleQueryRequest() *pb.QueryRequest {
 		log.Fatalln("Cannot marshal arguments to any")
 	}
 	return &pb.QueryRequest{
-		Address: "contract-address", //&pb.Address{Data: []byte("contract-address")},
+		Address: "contract-example", //&pb.Address{Data: []byte("contract-address")},
 		Method:  "get_fee",
 		Input: &pb.Input{
 			Msg: &pb.Msg{
