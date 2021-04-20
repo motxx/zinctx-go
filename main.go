@@ -28,12 +28,12 @@ func makeSampleQueryRequest() *pb.QueryRequest {
 		log.Fatalln("Cannot marshal arguments to any")
 	}
 	return &pb.QueryRequest{
-		Address: "contract-example", //&pb.Address{Data: []byte("contract-address")},
+		Address: "0x1f81df95c5478059e0e85f7594467bbfe511792a", //&pb.Address{Data: []byte("contract-address")},
 		Method:  "get_fee",
 		Input: &pb.Input{
 			Msg: &pb.Msg{
-				Sender:    "sender-address",    //&pb.Address{Data: []byte("sender")},
-				Recipient: "recipient-address", //&pb.Address{Data: []byte("recipient")},
+				Sender:    "0x215D76a620De5D2e9dC552278048C4dA22aA7AD9", //&pb.Address{Data: []byte("sender")},
+				Recipient: "0x1f81df95c5478059e0e85f7594467bbfe511792a", //&pb.Address{Data: []byte("recipient")},
 			},
 			Arguments: args,
 		},
