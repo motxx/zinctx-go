@@ -12,8 +12,6 @@ import (
 	"log"
 	"unsafe"
 
-	pb "github.com/motxx/zinctx-go/protos"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
@@ -40,36 +38,27 @@ func makeSampleQueryRequest() *pb.QueryRequest {
 	}
 }
 
-func SendQueryRequest(endpoint string, req *pb.QueryRequest) *pb.QueryResponse {
+func SendQueryRequest(endpoint string, address string, method string, input string) string {
 	endpoint_cstr := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(endpoint_cstr))
 
-	raw, err := proto.Marshal(req)
-	if err != nil {
-		log.Fatalln("Failed to encode req:", err)
-	}
+	address_cstr := C.CString(address)
+	defer C.free(unsafe.Pointer(address_cstr))
 
-	req_cstr := C.CString(string(raw))
-	defer C.free(unsafe.Pointer(req_cstr))
+	method_cstr := C.CString(method)
+	defer C.free(unsafe.Pointer(method_cstr))
 
-	res_cstr := C.ffi_send_query_request(endpoint_cstr, req_cstr)
+	input_cstr := C.CString(input)
+	defer C.free(unsafe.Pointer(input_cstr))
+
+	res_cstr := C.ffi_send_query_request(endpoint_cstr, address_cstr, method_cstr, input_cstr)
 	defer C.free(unsafe.Pointer(res_cstr))
 
-	res := &pb.QueryResponse{}
-	err = proto.Unmarshal([]byte(C.GoString(res_cstr)), res)
-	if err != nil {
-		log.Fatalln("Failed to encode res:", err)
-	}
-
-	return res
+	return C.GoString(res_cstr)
 }
 
 func main() {
-	req := makeSampleQueryRequest()
-	response := SendQueryRequest(rinkebyUrl, req)
-	out := &pb.GetFeeOutput{}
-	if err := response.Output.UnmarshalTo(out); err != nil {
-		log.Fatalln("Cannot unmarshal output")
-	}
+	in := makeSampleQueryInput()
+	out := SendQueryRequest(rinkebyUrl, "0x1f81df95c5478059e0e85f7594467bbfe511792a", "get_fee", input)
 	fmt.Println("Fee:", out.Fee)
 }
